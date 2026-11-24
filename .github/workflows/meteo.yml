@@ -1,0 +1,41 @@
+name: Météo
+
+# Prévisions des 17 chefs-lieux (Open-Meteo : AROME puis ECMWF IFS), toutes les 6 heures.
+# 00 h, 06 h, 12 h et 18 h UTC, à la minute 15. Pas de garde horaire : le rythme est le même été comme hiver.
+# Les cartes des modèles ne sont PAS produites ici : le dépôt MonClimat les publie chaque jour (GitHub Pages).
+on:
+  schedule:
+    - cron: "15 0,6,12,18 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+# Une seule écriture dans le dépôt à la fois, toutes tâches de données confondues.
+concurrency:
+  group: data-push
+  cancel-in-progress: false
+
+jobs:
+  meteo:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Récupérer les prévisions
+        run: node scripts/meteo.mjs
+      - name: Enregistrer si les données ont changé
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data/meteo.json
+          if git diff --cached --quiet; then
+            echo "Aucun changement."
+            exit 0
+          fi
+          git commit -m "Météo : prévisions du $(date -u +%F) à $(date -u +%H) h UTC"
+          git pull --rebase origin "${GITHUB_REF_NAME}"
+          git push origin "HEAD:${GITHUB_REF_NAME}"
