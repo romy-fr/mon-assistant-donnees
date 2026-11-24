@@ -1,0 +1,49 @@
+name: Lois
+
+# Textes en discussion et votes (Assemblée nationale, Sénat).
+# Rythme voulu (heure de Paris) : 8 h, 14 h et 20 h chaque jour, et seulement 14 h le week-end.
+# GitHub compte en UTC : on programme les deux heures UTC possibles (hiver et été, à la minute 5),
+# et scripts/lois.mjs ne laisse passer que celle qui correspond à l'heure de Paris voulue.
+on:
+  schedule:
+    - cron: "5 6,7,12,13,18,19 * * *"
+  workflow_dispatch:
+    inputs:
+      force:
+        description: "Forcer l'actualisation (ignore l'heure et la date des sources)"
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
+
+# Une seule écriture dans le dépôt à la fois, toutes tâches de données confondues.
+concurrency:
+  group: data-push
+  cancel-in-progress: false
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Actualiser les lois
+        env:
+          FORCE: ${{ inputs.force && '1' || '' }}
+        run: node scripts/lois.mjs
+      - name: Enregistrer les changements
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data
+          if git diff --cached --quiet; then
+            echo "Aucun changement."
+            exit 0
+          fi
+          git commit -m "Lois : actualisation des données"
+          git pull --rebase origin "${GITHUB_REF_NAME}"
+          git push origin "HEAD:${GITHUB_REF_NAME}"

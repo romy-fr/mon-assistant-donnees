@@ -1,0 +1,46 @@
+name: Climat
+
+on:
+  schedule:
+    # Minuit à Paris : 22 h UTC l'été, 23 h UTC l'hiver. Le garde de scripts/climat.mjs ne laisse passer que la bonne.
+    - cron: "5 22 * * *"
+    - cron: "5 23 * * *"
+  workflow_dispatch:
+    inputs:
+      force:
+        description: "Forcer l'exécution hors créneau"
+        type: boolean
+        default: true
+
+permissions:
+  contents: write
+
+concurrency:
+  group: data-push
+  cancel-in-progress: false
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Actualiser les données du climat
+        run: node scripts/climat.mjs
+        env:
+          FORCE: ${{ inputs.force && '1' || '' }}
+      - name: Publier si les données ont changé
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data
+          if git diff --cached --quiet; then
+            echo "Rien à publier."
+            exit 0
+          fi
+          git commit -m "Climat : mise à jour des données"
+          git pull --rebase origin "${{ github.ref_name }}"
+          git push

@@ -1,0 +1,22 @@
+{
+  "scrutins": {
+    "lastModified": "Tue, 24 Nov 2026 17:27:25 GMT",
+    "etag": "\"1dc0458-66109061a11fe\"",
+    "length": "31196248"
+  },
+  "dossiers": {
+    "lastModified": "Tue, 24 Nov 2026 17:16:38 GMT",
+    "etag": "\"ad4089-66108df924d04\"",
+    "length": "11354249"
+  },
+  "organes": {
+    "lastModified": "Tue, 24 Nov 2026 02:50:48 GMT",
+    "etag": "\"4a8ee3-660fcc7112d49\"",
+    "length": "4886243"
+  },
+  "senat": {
+    "lastModified": "Tue, 24 Nov 2026 02:21:08 GMT",
+    "etag": "\"1acde-f8f574-660fc5cf74d00\"",
+    "length": "16315764"
+  }
+}
