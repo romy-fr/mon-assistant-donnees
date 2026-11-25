@@ -1,22 +1,22 @@
 {
   "scrutins": {
-    "lastModified": "Tue, 24 Nov 2026 17:27:25 GMT",
-    "etag": "\"1dc0458-66109061a11fe\"",
-    "length": "31196248"
+    "lastModified": "Wed, 25 Nov 2026 05:26:48 GMT",
+    "etag": "\"1dc4d7f-6611312cde497\"",
+    "length": "31214975"
   },
   "dossiers": {
-    "lastModified": "Tue, 24 Nov 2026 19:16:44 GMT",
-    "etag": "\"ae1707-6610a8d11aacc\"",
-    "length": "11409159"
+    "lastModified": "Wed, 25 Nov 2026 01:16:50 GMT",
+    "etag": "\"ae171a-6610f94dd7faf\"",
+    "length": "11409178"
   },
   "organes": {
-    "lastModified": "Tue, 24 Nov 2026 02:50:48 GMT",
-    "etag": "\"4a8ee3-660fcc7112d49\"",
-    "length": "4886243"
+    "lastModified": "Wed, 25 Nov 2026 02:50:41 GMT",
+    "etag": "\"4a92c7-66110e4843aa0\"",
+    "length": "4887239"
   },
   "senat": {
-    "lastModified": "Tue, 24 Nov 2026 02:21:08 GMT",
-    "etag": "\"1acde-f8f574-660fc5cf74d00\"",
-    "length": "16315764"
+    "lastModified": "Wed, 25 Nov 2026 02:21:30 GMT",
+    "etag": "\"1acdd-f9453e-661107c1e5e80\"",
+    "length": "16336190"
   }
 }
