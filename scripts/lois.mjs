@@ -429,7 +429,7 @@ async function senatTexts(file, anIndex, today) {
 // ───────────────────────── Programme principal ─────────────────────────
 
 async function main() {
-  if (!shouldRun([8, 14, 20], { weekendHours: [14] })) return;
+  if (!shouldRun("lois", { hours: [8, 14, 20], weekendHours: [14] })) return;
   const force = process.env.FORCE === "1" || process.env.FORCE === "true";
   const today = parisToday();
 

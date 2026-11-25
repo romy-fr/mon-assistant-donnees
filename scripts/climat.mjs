@@ -3,7 +3,7 @@
 import { shouldRun } from "./lib/guard.mjs";
 import { writeEnvelope } from "./lib/write.mjs";
 
-if (!shouldRun([0])) process.exit(0);
+if (!shouldRun("climat", { hours: [0] })) process.exit(0);
 
 const UA = "MonAssistant-donnees/1.0 (+https://github.com/romy-fr/mon-assistant-donnees)";
 const NOAA = "https://gml.noaa.gov/webdata/ccgg/trends/co2";

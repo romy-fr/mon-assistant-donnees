@@ -4,16 +4,16 @@ name: Immobilier
 # GitHub compte en UTC : 3 h 05 en été, 4 h 05 en hiver. scripts/immo.mjs ne laisse passer que 5 h à Paris.
 on:
   schedule:
-    - cron: "5 3 1 * *"
-    - cron: "5 4 1 * *"
+    # Créneau voulu : le 1er du mois à 5 h à Paris. Déclenchements multiples en secours (retards ou oublis de GitHub) :
+    # scripts/lib/guard.mjs n'exécute la tâche qu'une fois par créneau.
+    - cron: "50 3-10 1 * *"
   workflow_dispatch:
 
 permissions:
   contents: write
 
-# Une seule écriture dans le dépôt à la fois, toutes tâches de données confondues.
 concurrency:
-  group: data-push
+  group: data-immo
   cancel-in-progress: false
 
 jobs:
@@ -24,6 +24,8 @@ jobs:
       FORCE: ${{ github.event_name == 'workflow_dispatch' && '1' || '' }}
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref_name }}
       - uses: actions/setup-node@v4
         with:
           node-version: 22
@@ -33,11 +35,18 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add data/immo.json
+          git add data/immo.json data/_meta/slots/immo.json
           if git diff --cached --quiet; then
             echo "Aucun changement."
             exit 0
           fi
           git commit -m "Immobilier : actualisation mensuelle"
-          git pull --rebase origin "${GITHUB_REF_NAME}"
-          git push origin "HEAD:${GITHUB_REF_NAME}"
+          for essai in 1 2 3 4 5; do
+            if git pull --rebase origin "${GITHUB_REF_NAME}" && git push origin "HEAD:${GITHUB_REF_NAME}"; then
+              exit 0
+            fi
+            git rebase --abort 2>/dev/null || true
+            sleep $((essai * 7))
+          done
+          echo "Envoi impossible après cinq essais." >&2
+          exit 1

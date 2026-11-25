@@ -6,7 +6,9 @@ name: Lois
 # et scripts/lois.mjs ne laisse passer que celle qui correspond à l'heure de Paris voulue.
 on:
   schedule:
-    - cron: "5 6,7,12,13,18,19 * * *"
+    # Créneau voulu : 8 h, 14 h et 20 h à Paris (14 h seulement le week-end). Déclenchements multiples en secours (retards ou oublis de GitHub) :
+    # scripts/lib/guard.mjs n'exécute la tâche qu'une fois par créneau.
+    - cron: "5 6-22 * * *"
   workflow_dispatch:
     inputs:
       force:
@@ -17,9 +19,8 @@ on:
 permissions:
   contents: write
 
-# Une seule écriture dans le dépôt à la fois, toutes tâches de données confondues.
 concurrency:
-  group: data-push
+  group: data-lois
   cancel-in-progress: false
 
 jobs:
@@ -28,6 +29,8 @@ jobs:
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref_name }}
       - uses: actions/setup-node@v4
         with:
           node-version: 22
@@ -45,5 +48,12 @@ jobs:
             exit 0
           fi
           git commit -m "Lois : actualisation des données"
-          git pull --rebase origin "${GITHUB_REF_NAME}"
-          git push origin "HEAD:${GITHUB_REF_NAME}"
+          for essai in 1 2 3 4 5; do
+            if git pull --rebase origin "${GITHUB_REF_NAME}" && git push origin "HEAD:${GITHUB_REF_NAME}"; then
+              exit 0
+            fi
+            git rebase --abort 2>/dev/null || true
+            sleep $((essai * 7))
+          done
+          echo "Envoi impossible après cinq essais." >&2
+          exit 1

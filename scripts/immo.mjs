@@ -342,7 +342,7 @@ async function loadIrl() {
 // Programme principal
 // ---------------------------------------------------------------------------------------------------------------------
 async function main() {
-  if (!shouldRun([5])) return;
+  if (!shouldRun("immo", { hours: [5], monthDays: [1] })) return;
   const t0 = Date.now();
   const local = process.env.IMMO_FILES ? process.env.IMMO_FILES.split(",") : null;
   let dvf = { files: [], license: "lov2", lastModified: null };

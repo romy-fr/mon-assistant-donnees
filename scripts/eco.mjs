@@ -6,7 +6,7 @@ import { shouldRun } from "./lib/guard.mjs";
 import { writeEnvelope } from "./lib/write.mjs";
 
 // Hebdomadaire : lundi 7 h (Paris). 7 ou 8 h acceptées pour absorber le retard des tâches programmées.
-if (!shouldRun([7, 8])) process.exit(0);
+if (!shouldRun("eco", { hours: [7], weekdays: [1] })) process.exit(0);
 
 const UA = "MonAssistantDataBot/1.0 (GitHub Actions; open-data refresh)";
 const MONTHS = ["janvier", "février", "mars", "avril", "mai", "juin", "juillet", "août", "septembre", "octobre", "novembre", "décembre"];

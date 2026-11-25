@@ -2,17 +2,16 @@ name: Économie
 
 on:
   schedule:
-    # Lundi 7 h 05 à Paris : 5 h 05 UTC en été, 6 h 05 UTC en hiver. La garde horaire du script
-    # ne laisse passer que l'heure de Paris voulue (7 h ou 8 h, pour absorber un retard de GitHub).
-    - cron: "5 5 * * 1"
-    - cron: "5 6 * * 1"
+    # Créneau voulu : lundi 7 h à Paris. Déclenchements multiples en secours (retards ou oublis de GitHub) :
+    # scripts/lib/guard.mjs n'exécute la tâche qu'une fois par créneau.
+    - cron: "35 5-12 * * 1"
   workflow_dispatch:
 
 permissions:
   contents: write
 
 concurrency:
-  group: data-push
+  group: data-eco
   cancel-in-progress: false
 
 jobs:
@@ -23,6 +22,8 @@ jobs:
       FORCE: ${{ github.event_name == 'workflow_dispatch' && '1' || '' }}
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref_name }}
       - uses: actions/setup-node@v4
         with:
           node-version: 22
@@ -32,11 +33,18 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add data/eco.json
+          git add data/eco.json data/_meta/slots/eco.json
           if git diff --cached --quiet; then
             echo "Aucun changement."
-          else
-            git commit -m "data: économie $(date -u +%F)"
-            git pull --rebase
-            git push
+            exit 0
           fi
+          git commit -m "data: économie $(date -u +%F)"
+          for essai in 1 2 3 4 5; do
+            if git pull --rebase origin "${GITHUB_REF_NAME}" && git push origin "HEAD:${GITHUB_REF_NAME}"; then
+              exit 0
+            fi
+            git rebase --abort 2>/dev/null || true
+            sleep $((essai * 7))
+          done
+          echo "Envoi impossible après cinq essais." >&2
+          exit 1
