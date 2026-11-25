@@ -1,0 +1,43 @@
+name: Immobilier
+
+# Prix de vente au m² (DVF), loyers d'annonce (ANIL) et IRL (Insee) : une fois par mois, le 1er à 5 h (heure de Paris).
+# GitHub compte en UTC : 3 h 05 en été, 4 h 05 en hiver. scripts/immo.mjs ne laisse passer que 5 h à Paris.
+on:
+  schedule:
+    - cron: "5 3 1 * *"
+    - cron: "5 4 1 * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+# Une seule écriture dans le dépôt à la fois, toutes tâches de données confondues.
+concurrency:
+  group: data-push
+  cancel-in-progress: false
+
+jobs:
+  immo:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      FORCE: ${{ github.event_name == 'workflow_dispatch' && '1' || '' }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Calculer les agrégats immobiliers
+        run: node scripts/immo.mjs
+      - name: Enregistrer si les données ont changé
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data/immo.json
+          if git diff --cached --quiet; then
+            echo "Aucun changement."
+            exit 0
+          fi
+          git commit -m "Immobilier : actualisation mensuelle"
+          git pull --rebase origin "${GITHUB_REF_NAME}"
+          git push origin "HEAD:${GITHUB_REF_NAME}"

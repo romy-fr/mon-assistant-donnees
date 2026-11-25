@@ -17,7 +17,9 @@ export function shouldRun(hours, opts = {}) {
   if (process.env.FORCE === "1" || process.env.FORCE === "true") return true;
   const { hour, weekend } = parts(new Date());
   const allowed = weekend && opts.weekendHours ? opts.weekendHours : hours;
-  const ok = allowed.includes(hour);
+  // GitHub retarde souvent les tâches programmées (40 à 50 min observées) : on accepte aussi l'heure suivante.
+  // Deux passages dans le même créneau sont sans effet : rien n'est écrit si les données n'ont pas changé.
+  const ok = allowed.some((h) => hour === h || hour === (h + 1) % 24);
   if (!ok) console.log(`Hors créneau (Paris ${hour} h, ${weekend ? "week-end" : "semaine"}) : rien à faire.`);
   return ok;
 }
