@@ -35,7 +35,7 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add data/immo.json data/_meta/slots/immo.json
+          git add data/immo.json data/immo-communes data/_meta/slots/immo.json
           if git diff --cached --quiet; then
             echo "Aucun changement."
             exit 0

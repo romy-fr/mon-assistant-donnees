@@ -130,9 +130,61 @@ for (const v of VILLES) {
   for (const c of v.communes) communeToVille.set(c, v);
 }
 
+/** Mois compté depuis janvier 2000. */
+const moisIndex = (d) => (Number(d.slice(0, 4)) - 2000) * 12 + Number(d.slice(5, 7)) - 1;
+
+function ajouterCommune(collector, r, pm2) {
+  let c = collector.communes.get(r.commune);
+  if (!c) {
+    c = { nom: r.nom, cps: new Set(), appartement: [], maison: [] };
+    collector.communes.set(r.commune, c);
+  }
+  if (r.cp) c.cps.add(r.cp);
+  c[r.type === "Appartement" ? "appartement" : "maison"].push(Math.round(pm2) * 1024 + moisIndex(r.date));
+}
+
+/** Fichiers par département et index de recherche : communes ayant assez de ventes pour au moins un type de bien. */
+function ecrireCommunes(collector, { seuilDate, maxDate, trimestres, loyers, source }) {
+  const parDept = new Map();
+  const index = [];
+  const depuis = moisIndex(seuilDate);
+  const trimestreDe = (m) => `${2000 + Math.floor(m / 12)}-T${Math.floor((m % 12) / 3) + 1}`;
+  const calc = (codes) => {
+    const ventes = codes.map((x) => ({ pm2: Math.floor(x / 1024), m: x % 1024 }));
+    const st = stats(ventes.filter((v) => v.m >= depuis).map((v) => v.pm2), MIN_VENTES_SECTEUR);
+    if (!st) return null;
+    const groupes = new Map();
+    for (const v of ventes) {
+      const q = trimestreDe(v.m);
+      if (!groupes.has(q)) groupes.set(q, []);
+      groupes.get(q).push(v.pm2);
+    }
+    const serie = trimestres.map((q) => {
+      const s = stats(groupes.get(q) ?? [], MIN_VENTES_TRIMESTRE);
+      return s ? { t: q, median: s.median, ventes: s.ventes } : null;
+    });
+    return { ...st, serie: serie.filter(Boolean).length >= 4 ? serie : null };
+  };
+  for (const [code, c] of [...collector.communes].sort((a, b) => a[0].localeCompare(b[0]))) {
+    const appartement = calc(c.appartement);
+    const maison = calc(c.maison);
+    if (!appartement && !maison) continue;
+    const dept = code.startsWith("97") ? code.slice(0, 3) : code.slice(0, 2);
+    const loy = loyers ? { app12: loyers.app12.get(code) ?? null, app3: loyers.app3.get(code) ?? null, maison: loyers.mai.get(code) ?? null } : null;
+    if (!parDept.has(dept)) parDept.set(dept, {});
+    parDept.get(dept)[code] = { nom: c.nom, appartement, maison, loyers: loy };
+    index.push([code, c.nom, [...c.cps].sort().join(" "), (appartement?.ventes ?? 0) + (maison?.ventes ?? 0)]);
+  }
+  if (index.length < 5000) throw new Error(`Seulement ${index.length} communes publiables : écriture refusée.`);
+  for (const [dept, communes] of parDept) writeEnvelope(`immo-communes/${dept}`, { ventesA: maxDate, communes }, { schemaVersion: 1, source });
+  writeEnvelope("immo-communes/index", { ventesA: maxDate, communes: index }, { schemaVersion: 1, source });
+  console.log(`Communes publiées : ${index.length}, dans ${parDept.size} départements.`);
+}
+
 /** Ventes retenues : { villeId, secteurId, secteurNom, type, date (AAAA-MM-JJ), pm2 } */
 function newCollector() {
-  return { ventes: [], noms: new Map(), mutations: 0, retenues: 0, rejets: { multi: 0, prix: 0, surface: 0, autre: 0 }, maxDate: "", minDate: "9999" };
+  // communes : toutes les communes de France, une vente = un entier compact (prix au m² et mois), pour la recherche libre.
+  return { ventes: [], noms: new Map(), communes: new Map(), mutations: 0, retenues: 0, rejets: { multi: 0, prix: 0, surface: 0, autre: 0 }, maxDate: "", minDate: "9999" };
 }
 
 function finishMutation(rows, col, collector) {
@@ -164,7 +216,9 @@ function finishMutation(rows, col, collector) {
     collector.rejets.prix++;
     return;
   }
+  ajouterCommune(collector, r, pm2);
   const ville = communeToVille.get(r.commune);
+  if (!ville) return;
   const secteurId = ville.secteurs === "arrondissement" ? r.commune : r.cp;
   if (!secteurId) {
     collector.rejets.autre++;
@@ -200,7 +254,7 @@ async function processDvf(source, collector) {
     // Filtre rapide : on n'analyse en détail que les lignes d'une commune suivie.
     const f = splitCsv(line, col.nombre_pieces_principales + 1);
     const commune = f[col.code_commune];
-    if (!communeToVille.has(commune)) return;
+    if (!commune) return;
     const id = f[col.id_mutation];
     if (id !== currentId) {
       finishMutation(rows, col, collector);
@@ -447,6 +501,7 @@ async function main() {
   };
   const source = "DVF (DGFiP, Etalab) ; Carte des loyers (ANIL) ; Insee — Licence Ouverte 2.0";
   const ok = writeEnvelope("immo", data, { schemaVersion: 1, source });
+  ecrireCommunes(collector, { seuilDate, maxDate, trimestres, loyers, source });
   console.log(`Terminé en ${Math.round((Date.now() - t0) / 1000)} s (${ok ? "écrit" : "inchangé"}) : ${villes.length} villes, ${villes.reduce((n, v) => n + v.secteurs.length, 0)} secteurs.`);
 }
 
