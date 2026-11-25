@@ -5,9 +5,9 @@
     "length": "31214975"
   },
   "dossiers": {
-    "lastModified": "Wed, 25 Nov 2026 09:16:52 GMT",
-    "etag": "\"ae1748-66116499631fb\"",
-    "length": "11409224"
+    "lastModified": "Wed, 25 Nov 2026 17:16:49 GMT",
+    "etag": "\"ae66a3-6611cfe1076ef\"",
+    "length": "11429539"
   },
   "organes": {
     "lastModified": "Wed, 25 Nov 2026 02:50:41 GMT",
@@ -16,7 +16,7 @@
   },
   "senat": {
     "lastModified": "Wed, 25 Nov 2026 02:21:30 GMT",
-    "etag": "\"1acdd-f9453e-661107c1e5e80\"",
+    "etag": "\"4801-f9453e-661107c1e5e80\"",
     "length": "16336190"
   }
 }
