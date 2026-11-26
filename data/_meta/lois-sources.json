@@ -1,13 +1,13 @@
 {
   "scrutins": {
-    "lastModified": "Thu, 26 Nov 2026 05:27:04 GMT",
-    "etag": "\"1dc9968-6612731a4d2b0\"",
-    "length": "31234408"
+    "lastModified": "Thu, 26 Nov 2026 11:27:55 GMT",
+    "etag": "\"1dcf757-6612c3c1d783a\"",
+    "length": "31258455"
   },
   "dossiers": {
-    "lastModified": "Thu, 26 Nov 2026 07:16:51 GMT",
-    "etag": "\"ae8250-66128ba3a1e5c\"",
-    "length": "11436624"
+    "lastModified": "Thu, 26 Nov 2026 17:16:44 GMT",
+    "etag": "\"aeb27a-661311b9122a6\"",
+    "length": "11448954"
   },
   "organes": {
     "lastModified": "Thu, 26 Nov 2026 02:50:45 GMT",
